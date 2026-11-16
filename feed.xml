@@ -1,4 +1,213 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://meshery.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://meshery.io/" rel="alternate" type="text/html" /><updated>2026-10-12T11:34:59+00:00</updated><id>https://meshery.io/feed.xml</id><title type="html">Meshery</title><subtitle>The extensible cloud native manager. Confidently wrangle cloud native infrastructure with Meshery.</subtitle><author><name>The Meshery Authors</name><email>community@meshery.io</email></author><entry><title type="html">Spotlight: Shape Builder Extension</title><link href="https://meshery.io/blog/2026/06/2026-06-28-spotlight-shape-builder-extension/" rel="alternate" type="text/html" title="Spotlight: Shape Builder Extension" /><published>2026-06-28T00:00:00+00:00</published><updated>2026-06-28T00:00:00+00:00</updated><id>https://meshery.io/blog/2026/06/spotlight-shape-builder-extension</id><content type="html" xml:base="https://meshery.io/blog/2026/06/2026-06-28-spotlight-shape-builder-extension/"><![CDATA[<p>The Meshery ecosystem is full of focused tools that make designing and visualizing cloud native infrastructure easier. One of them, the <strong>Shape Builder</strong> extension, is looking for contributors who want to take ownership of a meaningful, standalone project and grow into maintainers. This post spotlights what Shape Builder does, where it stands today, and exactly where the project needs help.</p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://meshery.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://meshery.io/" rel="alternate" type="text/html" /><updated>2026-11-16T22:03:06+00:00</updated><id>https://meshery.io/feed.xml</id><title type="html">Meshery</title><subtitle>The extensible cloud native manager. Confidently wrangle cloud native infrastructure with Meshery.</subtitle><author><name>The Meshery Authors</name><email>community@meshery.io</email></author><entry><title type="html">Announcing mesheryctl-axi: the Agent-Friendly Meshery CLI</title><link href="https://meshery.io/blog/2026/11/2026-11-01-announcing-mesheryctl-axi/" rel="alternate" type="text/html" title="Announcing mesheryctl-axi: the Agent-Friendly Meshery CLI" /><published>2026-11-01T00:00:00+00:00</published><updated>2026-11-01T00:00:00+00:00</updated><id>https://meshery.io/blog/2026/11/announcing-mesheryctl-axi</id><content type="html" xml:base="https://meshery.io/blog/2026/11/2026-11-01-announcing-mesheryctl-axi/"><![CDATA[<p>Your AI agent is already driving your terminal. The question is whether the tools it calls were built for its eyes. <code class="language-plaintext highlighter-rouge">mesheryctl</code> was built for yours: human-readable tables, box-drawing characters, prose summaries. An agent reads all of that too, and pays for every repeated character in tokens. <code class="language-plaintext highlighter-rouge">mesheryctl-axi</code> is the new answer: an agent-ergonomic wrapper around <code class="language-plaintext highlighter-rouge">mesheryctl</code> that speaks TOON, never prompts, and tells the agent exactly what to do next.</p>
+
+<h2 id="the-axi-pattern">The AXI pattern</h2>
+
+<p>AXI - the <a href="https://axi.md">Agent eXperience Interface</a> - is a set of 10 design principles for making CLIs agent-ergonomic, validated across two benchmarks and 915 runs. The pattern is already proven in the wild: <a href="https://github.com/kunchenguid/gh-axi"><code class="language-plaintext highlighter-rouge">gh-axi</code></a> wraps the official <code class="language-plaintext highlighter-rouge">gh</code> CLI with token-efficient TOON output, contextual next-step suggestions, and structured error handling. In the AXI benchmark - 17 real-world GitHub tasks, five interface setups, five repeats each, <code class="language-plaintext highlighter-rouge">claude-sonnet-4-6</code> as the agent with an LLM judge scoring task success - gh-axi posted the lowest input tokens, cost, and duration of all conditions, and was the only one to pass every run: 100% task success against 86% for raw <code class="language-plaintext highlighter-rouge">gh</code>, at 7% lower cost.</p>
+
+<p>The lineage is deliberate. <code class="language-plaintext highlighter-rouge">mesheryctl-axi</code> follows the same validated approach: <strong>wrap the human CLI instead of changing it</strong>. The design and scope are tracked in <a href="https://github.com/meshery/meshery/issues/20979">meshery/meshery#20979</a> - an early draft considered in-tree <code class="language-plaintext highlighter-rouge">--render</code> flags, but the project reversed that call and chose the wrapper. Human output stays human. Agents get their own lane.</p>
+
+<h2 id="what-mesheryctl-axi-is">What mesheryctl-axi is</h2>
+
+<p><a href="https://github.com/meshery-extensions/mesheryctl-axi"><code class="language-plaintext highlighter-rouge">mesheryctl-axi</code></a> spawns <code class="language-plaintext highlighter-rouge">mesheryctl</code> - it does not embed Meshery - and reshapes the reporting around four agent needs. It is published to npm and listed in the <a href="https://docs.meshery.io/extensions/extensions/">Meshery extensions catalog</a>:</p>
+
+<ul>
+  <li><strong>Default TOON reporting.</strong> List, view, system, and error output come back in <a href="https://toonformat.dev/">TOON</a>, a token-efficient serialization for tabular data. Agents spend most of their Meshery tokens reading repeated list and view output, so the wrapper reshapes exactly that. Design and model <em>content</em> stays canonical: raw YAML or JSON, never TOON-wrapped, with no trailing suggestions.</li>
+  <li><strong>Always non-interactive.</strong> No TTY prompts, ever. A command that needs input fails fast instead of hanging an agent session.</li>
+  <li><strong>Structured errors.</strong> Failures return <code class="language-plaintext highlighter-rouge">error</code>, <code class="language-plaintext highlighter-rouge">code</code>, and <code class="language-plaintext highlighter-rouge">help[]</code> in TOON. Codes include <code class="language-plaintext highlighter-rouge">VALIDATION_ERROR</code> (exit 2), <code class="language-plaintext highlighter-rouge">AUTH_REQUIRED</code>, <code class="language-plaintext highlighter-rouge">NOT_FOUND</code>, <code class="language-plaintext highlighter-rouge">MESHERYCTL_NOT_INSTALLED</code>, <code class="language-plaintext highlighter-rouge">MESHERYCTL_INCOMPATIBLE</code>, and <code class="language-plaintext highlighter-rouge">UNKNOWN</code> (exit 1).</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">help[]</code> next-step lines.</strong> Every successful reporting command ends with contextual suggestions for what to run next, so the agent does not have to guess.</li>
+</ul>
+
+<p>Empty results are definitive rather than ambiguous: a successful empty collection reports <code class="language-plaintext highlighter-rouge">connections: 0</code>, while authentication, reachability, and server errors stay structured errors - never silently interpreted as empty.</p>
+
+<h2 id="try-it-copypaste-prompts">Try it: copy/paste prompts</h2>
+
+<p>Run an agent with <code class="language-plaintext highlighter-rouge">mesheryctl-axi</code> as its Meshery tool and paste in one of these prompts. Each drives a single wrapper command and returns clean TOON, so you can compare against the same prompt run through raw <code class="language-plaintext highlighter-rouge">mesheryctl</code>. The outputs below are captured from the released binary against a fixture server speaking the real Meshery API shapes.</p>
+
+<p><strong>Prompt 1: “List my Meshery connections and show only the Kubernetes ones.”</strong></p>
+
+<p>The agent runs:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npx <span class="nt">-y</span> mesheryctl-axi connection list <span class="nt">--kind</span> kubernetes
+</code></pre></div></div>
+
+<p>and reads:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>count: 2
+total: 2
+connections[2]{id,name,status,kind,type}:
+  c0ffee11-0000-4000-8000-aaaaaaaaaaaa,metal04,connected,kubernetes,platform
+  c0ffee22-0000-4000-8000-bbbbbbbbbbbb,docker-desktop,discovered,kubernetes,platform
+status:
+  connected: 1
+  discovered: 1
+help[1]:
+  mesheryctl-axi connection view &lt;id&gt;
+</code></pre></div></div>
+
+<p><strong>Prompt 2: “Show me the status of my Meshery system.”</strong></p>
+
+<p>The agent runs:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npx <span class="nt">-y</span> mesheryctl-axi system status
+</code></pre></div></div>
+
+<p>and reads the same structured <code class="language-plaintext highlighter-rouge">system_status</code> schema the content-first home (<code class="language-plaintext highlighter-rouge">npx -y mesheryctl-axi</code> with no arguments) reports: status, version, platform, provider, and endpoint, followed by a <code class="language-plaintext highlighter-rouge">help[]</code> suggestion pointing at <code class="language-plaintext highlighter-rouge">system context</code>.</p>
+
+<p><strong>Prompt 3: “Fetch the sock-shop design as YAML.”</strong></p>
+
+<p>The agent runs:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npx <span class="nt">-y</span> mesheryctl-axi design content sock-shop <span class="nt">--format</span> yaml
+</code></pre></div></div>
+
+<p>and gets raw YAML back - no TOON, no <code class="language-plaintext highlighter-rouge">help[]</code>. Content commands are schema-faithful by design; the wrapper never re-serializes the artifact the agent asked for.</p>
+
+<p>Bonus: when the agent gets it wrong, the wrapper coaches it back. An unknown flag returns a structured error the agent can act on without scraping prose:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ mesheryctl-axi connection list --bogus
+error: "unknown flag for mesheryctl-axi connection list: --bogus"
+code: VALIDATION_ERROR
+help[2]:
+  mesheryctl-axi connection list [flags]
+  mesheryctl-axi connection list --help
+</code></pre></div></div>
+
+<h2 id="measured-the-agentic-performance-comparison">Measured: the agentic performance comparison</h2>
+
+<p>Assertions about agent ergonomics are cheap, so the project ran a controlled benchmark before announcing: <a href="https://github.com/meshery-extensions/mesheryctl-axi/issues/23">meshery-extensions/mesheryctl-axi#23</a>, by community contributor Salmaan-M. The harness drove the same model (<code class="language-plaintext highlighter-rouge">nvidia/nemotron-3-super-120b-a12b:free</code>) through the same representative tasks with fresh agent runs under paired RAW vs AXI conditions, capturing turns, token usage, wall-clock time, CLI errors, retries, and task accuracy across 40 valid paired observations on 6 representative tasks.</p>
+
+<p>The results:</p>
+
+<ul>
+  <li><strong>Accuracy: 40/40 exact for both RAW and AXI (100%).</strong> Neither condition hallucinated a flag or misparsed output on the primary task set.</li>
+  <li><strong>Wall-clock time is task-dependent, favoring AXI.</strong> AXI was faster in all 5 <code class="language-plaintext highlighter-rouge">system-status</code> repetitions, in most <code class="language-plaintext highlighter-rouge">connections-by-kind</code> repetitions, and in 4 of 5 <code class="language-plaintext highlighter-rouge">component-list</code> repetitions. <code class="language-plaintext highlighter-rouge">connections-count</code>, <code class="language-plaintext highlighter-rouge">design-list-view</code>, and <code class="language-plaintext highlighter-rouge">connection-id-kind</code> were mixed.</li>
+  <li>A secondary <code class="language-plaintext highlighter-rouge">system-version-platform</code> result (5/5 exact, paired) was kept separate because of provider rate-limit and max-turn instability in the surrounding runs.</li>
+</ul>
+
+<p>The <a href="https://github.com/user-attachments/files/33106808/Benchmark_report.pdf">full benchmark report</a> (PDF) has the methodology, task-level tables, exclusions, and reproducibility notes. The headline: the wrapper matches raw <code class="language-plaintext highlighter-rouge">mesheryctl</code> on correctness while shaving wall-clock time on the read-heavy tasks where agents spend most of their tokens.</p>
+
+<h2 id="adopt-it">Adopt it</h2>
+
+<p>Getting an agent onto the wrapper takes minutes:</p>
+
+<ol>
+  <li><strong>Install and authenticate <code class="language-plaintext highlighter-rouge">mesheryctl</code>.</strong> The wrapper spawns it; it is the only hard dependency. (Override the binary with <code class="language-plaintext highlighter-rouge">MESHERYCTL_BIN=/path/to/mesheryctl</code> if it is not on <code class="language-plaintext highlighter-rouge">PATH</code>.)</li>
+  <li><strong>Make the wrapper the agent’s first call.</strong> <code class="language-plaintext highlighter-rouge">npx -y mesheryctl-axi</code> needs Node.js 22 or newer and returns a content-first home with live context and system status.</li>
+  <li><strong>Pin the agent instruction.</strong> Paste this into the repo’s <code class="language-plaintext highlighter-rouge">AGENTS.md</code>, <code class="language-plaintext highlighter-rouge">CLAUDE.md</code>, or equivalent:</li>
+</ol>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Prefer mesheryctl-axi over raw mesheryctl for Meshery operations. Run it with
+`npx -y mesheryctl-axi`, append subcommands directly, and follow its `help[]`
+suggestions. Treat list, view, system, and error output as TOON; preserve
+`design content` and `model content` as raw YAML or JSON. A definitive
+`&lt;resource&gt;: 0` means empty; an error or unavailable field does not.
+</code></pre></div></div>
+
+<ol>
+  <li><strong>Enable ambient discovery.</strong> The npm package ships an Agent Skill (copy it into your agent’s skills directory) and <code class="language-plaintext highlighter-rouge">npx -y mesheryctl-axi setup hooks</code> installs session-start hooks for Claude Code, Codex, and OpenCode.</li>
+  <li><strong>Try the prompts above</strong>, then file feedback and feature requests in the <a href="https://github.com/meshery-extensions/mesheryctl-axi">mesheryctl-axi repository</a>.</li>
+</ol>
+
+<p><code class="language-plaintext highlighter-rouge">mesheryctl</code> was built for your eyes. <code class="language-plaintext highlighter-rouge">mesheryctl-axi</code> is built for your agent’s - and the numbers say it shows.</p>]]></content><author><name>Meshery Authors</name></author><category term="mesheryctl" /><category term="extensions" /><category term="platform-engineering" /><summary type="html"><![CDATA[Your AI agent is already driving your terminal. The question is whether the tools it calls were built for its eyes. mesheryctl was built for yours: human-readable tables, box-drawing characters, prose summaries. An agent reads all of that too, and pays for every repeated character in tokens. mesheryctl-axi is the new answer: an agent-ergonomic wrapper around mesheryctl that speaks TOON, never prompts, and tells the agent exactly what to do next.]]></summary></entry><entry><title type="html">Meshery is now a CNCF Incubating Project</title><link href="https://meshery.io/blog/2026/10/2026-10-10-meshery-is-now-incubating/" rel="alternate" type="text/html" title="Meshery is now a CNCF Incubating Project" /><published>2026-10-10T00:00:00+00:00</published><updated>2026-10-10T00:00:00+00:00</updated><id>https://meshery.io/blog/2026/10/meshery-is-now-incubating</id><content type="html" xml:base="https://meshery.io/blog/2026/10/2026-10-10-meshery-is-now-incubating/"><![CDATA[<p>It is official: the <strong>Cloud Native Computing Foundation (CNCF) Technical Oversight Committee has voted to accept Meshery as an Incubating project</strong>! This marks a massive milestone in our journey from a Sandbox project to becoming the premier cloud native manager and infrastructure management platform.</p>
+
+<h2 id="project-pulse">Project Pulse</h2>
+
+<p>Meshery has evolved far beyond its initial iterations. Today, it stands as an expansive cloud native manager designed to simplify the complex lifecycle of modern infrastructure. Instead of leaving you to wrestle with an endless pile of YAML, Meshery allows you to treat your cluster as a dynamic knowledge graph. This approach provides multi-cluster fleet management, deep visibility, and an extensible architecture that brings order and automation to cloud native operations.</p>
+
+<h2 id="a-community-driven-triumph">A Community-Driven Triumph</h2>
+
+<p>This incubation milestone belongs to the community. It is a direct result of the relentless collaboration and innovation from developers around the globe. Since entering the CNCF Sandbox on June 22, 2021, our ecosystem’s growth has been staggering:</p>
+
+<ul>
+  <li><strong>5th highest-velocity project</strong> in the CNCF.</li>
+  <li><strong>350% increase in code commits</strong> between July 1, 2025 to July 1, 2026.</li>
+  <li><strong>7,000+ Contributors</strong> helping build and refine the platform.</li>
+  <li><strong>1,000+ Contributing Organizations</strong> backing the ecosystem.</li>
+  <li><strong>36.6% Year-Over-Year Increase</strong> in active community contributors.</li>
+  <li><strong>15,000 GitHub stars</strong></li>
+</ul>
+
+<p>These metrics are more than just numbers, they reflect the real-world trust and reliance that users and organizations are placing in Meshery to design, operate, and manage their cloud native deployments at scale.</p>
+
+<h2 id="the-future">The Future</h2>
+
+<p>In the era of AI, Meshery is working on tackling critical gaps in cloud-native AI by grounding LLMs in rich, topology-aware context rather than leaving them to hallucinate over raw, isolated YAML manifests. By exposing cloud-native infrastructures as an active semantic knowledge graph, Meshery provides agents with full structural visibility into relationships, dependencies, and policy guardrails before they generate or mutate configurations. Subsequently, visualizing these AI-generated changes for review ensures a human remains in the loop. Crucially, these improvements to Meshery treats AI agents as first-class operators. We are also refining <code class="language-plaintext highlighter-rouge">mesheryctl</code> for headless, non-interactive execution and rolling out token-efficient output serializations like TOON alongside JSON and YAML, cutting context-window overhead while giving agents deterministic pre-change impact analysis directly inside their execution loops. And our newest project <a href="https://github.com/meshery-extensions/mesheryctl-axi"><code class="language-plaintext highlighter-rouge">mesheryctl-axi</code></a> takes this further by providing a dedicated Agent eXecution Interface (AXI) built specifically for autonomous systems—offering token-efficient TOON list and view reporting, definitive empty states, structured errors, actionable next-step suggestions, and strictly non-interactive execution, making it the preferred entry point over raw <code class="language-plaintext highlighter-rouge">mesheryctl</code> for agent workflows.</p>
+
+<p>Beyond our AI initiatives, the architectural roadmap focuses on scaling core infrastructure lifecycle operations through dynamic, model-driven orchestration. We are expanding runtime model generation from OCI registries and remote Helm charts, enabling seamless onboarding of custom resources while strengthening our semantic relationship engine to enforce policy and simulate changes before reconciliation. MeshSync is evolving with tiered discovery and composite fingerprinting to deliver near-instant, multi-cluster state synchronization at minimal resource cost. Paired with native OCI packaging for versioning designs, granular workspace boundaries for platform teams, and automated visual diff snapshots directly in pull requests, Meshery is set to make multi-cluster fleet management faster, visual, and collaborative at scale.</p>
+
+<h2 id="celebrate-with-us-at-kubecon--cloudnativecon-north-america-2026">Celebrate with Us at KubeCon + CloudNativeCon North America 2026!</h2>
+
+<p>Incubation is just the beginning of our next chapter, and we want to celebrate this momentum with you next month. Whether you are a long-time user or looking to make your very first open-source contribution, come connect with the maintainers and the community at the upcoming KubeCon + CloudNativeCon North America 2026 events:</p>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; margin: 2rem 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+  <!-- Card 1: Project Lightning Talk -->
+  <div style="flex: 1 1 340px; max-width: 460px; background-color: #f0faf8; border-radius: 14px; border: 1px solid #d4ece6; border-left: 7px solid #00B39F; padding: 22px 24px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <!-- Date & Time badge/header -->
+      <div style="margin-bottom: 12px; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #007a6c;">
+        Monday, November 9 &bull; 12:20 PM
+      </div>
+
+      <!-- Title -->
+      <h3 style="margin: 0 0 10px 0; font-size: 1.25rem; font-weight: 700; color: #111827; line-height: 1.35;">
+        Meshery: Your Cluster as a Knowledge Graph, Not a Pile of YAML
+      </h3>
+
+      <!-- Location -->
+      <p style="margin: 0 0 6px 0; font-size: 0.95rem; font-weight: 600; color: #374151;">
+        Hyatt Regency | Level 4 | Regency Ballroom B-D
+      </p>
+
+      <!-- Speaker -->
+      <p style="margin: 0 0 18px 0; font-size: 0.88rem; color: #6b7280; line-height: 1.45;">
+        Yash Sharma, UiPath
+      </p>
+    </div>
+
+    <!-- Tags -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <span style="border: 1.5px solid #00B39F; color: #007a6c; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; font-weight: 600;">
+        Project Lightning Talks
+      </span>
+    </div>
+  </div>
+
+  <!-- Card 2: Contribfest -->
+  <div style="flex: 1 1 340px; max-width: 460px; background-color: #f1f7fc; border-radius: 14px; border: 1px solid #d4e5f4; border-left: 7px solid #2563EB; padding: 22px 24px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <!-- Date & Time badge/header -->
+      <div style="margin-bottom: 12px; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #1d4ed8;">
+        Thursday, November 12 &bull; 1:50 PM
+      </div>
+
+      <!-- Title -->
+      <h3 style="margin: 0 0 10px 0; font-size: 1.25rem; font-weight: 700; color: #111827; line-height: 1.35;">
+        Meshery Contribfest: Ship Your First PR to a CNCF Cloud Native Manager
+      </h3>
+
+      <!-- Location -->
+      <p style="margin: 0 0 6px 0; font-size: 0.95rem; font-weight: 600; color: #374151;">
+        Salt Palace | Level 2 | 255 D
+      </p>
+
+      <!-- Speakers -->
+      <p style="margin: 0 0 18px 0; font-size: 0.85rem; color: #6b7280; line-height: 1.45;">
+        Yash Sharma, UiPath; Lee Calcote, Layer5, Inc.; Hussaina Begum Nandyala, Netskope; Shivay Lamba, Qualcomm; Sangram Rath, OD10 Ventures
+      </p>
+    </div>
+
+    <!-- Tags -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <span style="border: 1.5px solid #2563EB; color: #1d4ed8; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+        🤖 <span>Contribfest</span>
+      </span>
+    </div>
+  </div>
+
+</div>
+
+<p>We are incredibly proud of what this community has accomplished together. Stop by our events, meet the team, and let’s keep building the future of cloud native management.</p>]]></content><author><name>Sangram Rath</name></author><category term="announcements" /><category term="cncf" /><category term="kubecon" /><category term="cloudnativecon" /><category term="open-source" /><summary type="html"><![CDATA[It is official: the Cloud Native Computing Foundation (CNCF) Technical Oversight Committee has voted to accept Meshery as an Incubating project! This marks a massive milestone in our journey from a Sandbox project to becoming the premier cloud native manager and infrastructure management platform.]]></summary></entry><entry><title type="html">Spotlight: Shape Builder Extension</title><link href="https://meshery.io/blog/2026/06/2026-06-28-spotlight-shape-builder-extension/" rel="alternate" type="text/html" title="Spotlight: Shape Builder Extension" /><published>2026-06-28T00:00:00+00:00</published><updated>2026-06-28T00:00:00+00:00</updated><id>https://meshery.io/blog/2026/06/spotlight-shape-builder-extension</id><content type="html" xml:base="https://meshery.io/blog/2026/06/2026-06-28-spotlight-shape-builder-extension/"><![CDATA[<p>The Meshery ecosystem is full of focused tools that make designing and visualizing cloud native infrastructure easier. One of them, the <strong>Shape Builder</strong> extension, is looking for contributors who want to take ownership of a meaningful, standalone project and grow into maintainers. This post spotlights what Shape Builder does, where it stands today, and exactly where the project needs help.</p>
 
 <h2 id="what-is-shape-builder">What is Shape Builder?</h2>
 
@@ -936,7 +1145,7 @@ Relationships data generated in docs/_data/RelationshipsData.json
 The experiences shared by Certified Meshery Contributors highlight that the CMC is not just an exam, but recognition of the skills and understanding gained through real participation in the Meshery ecosystem. Visit the <a href="https://cloud.meshery.io/academy/certifications/c5ada327-8a58-4c8a-b9fa-51b95696488c/certified-meshery-contributor">Certified Meshery Contributor exam page</a> to learn more and register.
 If you’re already contributing to Meshery or planning to start, the CMC is a meaningful next step in that journey.</p>
 
-<p><em>- Meshery Maintainers</em></p>]]></content><author><name>Meshery Maintainers</name></author><category term="community" /><category term="open-source" /><summary type="html"><![CDATA[The launch of the Certified Meshery Contributor (CMC) certification marked an important milestone for the Meshery project — the first CNCF certification of its kind - designed to uplevel and validate the skills of contributors, who are actively shaping the Meshery ecosystem through real, hands-on open source work. Following the announcement, contributors from across the community stepped forward to take the CMC and share their journey. In this post, Certified Meshery Contributors talk about what the certification was really like, what they learned along the way, and why they believe the CMC is worth pursuing.]]></summary></entry><entry><title type="html">The Meshery Umbrella Expands</title><link href="https://meshery.io/blog/2025/meshery-ecosystem-expansion" rel="alternate" type="text/html" title="The Meshery Umbrella Expands" /><published>2025-11-04T18:00:00+00:00</published><updated>2025-11-04T18:00:00+00:00</updated><id>https://meshery.io/blog/2025/meshery-extensions-org</id><content type="html" xml:base="https://meshery.io/blog/2025/meshery-ecosystem-expansion"><![CDATA[<p>Meshery’s <a href="/blog/sixth-highest-velocity-cncf-project">high project velocity</a> necessitates a revision in its governance and organizational structure to align with the scale of its growing complexity and community contributions. To best serve its expansive ecosystem, Meshery maintainers have opted to partition its numerous GitHub repositories into two distinct organizations: <a href="https://github.com/meshery">Meshery</a> for the core platform and <a href="https://github.com/meshery-extensions">Meshery Extensions</a> for <a href="https://meshery.io/extensions">extensions</a>.</p>
+<p><em>- Meshery Maintainers</em></p>]]></content><author><name>Meshery Maintainers</name></author><category term="community" /><category term="open-source" /><summary type="html"><![CDATA[The launch of the Certified Meshery Contributor (CMC) certification marked an important milestone for the Meshery project — the first CNCF certification of its kind - designed to uplevel and validate the skills of contributors, who are actively shaping the Meshery ecosystem through real, hands-on open source work. Following the announcement, contributors from across the community stepped forward to take the CMC and share their journey. In this post, Certified Meshery Contributors talk about what the certification was really like, what they learned along the way, and why they believe the CMC is worth pursuing.]]></summary></entry><entry><title type="html">The Meshery Umbrella Expands</title><link href="https://meshery.io/blog/2025/meshery-ecosystem-expansion/" rel="alternate" type="text/html" title="The Meshery Umbrella Expands" /><published>2025-11-04T18:00:00+00:00</published><updated>2025-11-04T18:00:00+00:00</updated><id>https://meshery.io/blog/2025/meshery-extensions-org</id><content type="html" xml:base="https://meshery.io/blog/2025/meshery-ecosystem-expansion/"><![CDATA[<p>Meshery’s <a href="/blog/sixth-highest-velocity-cncf-project">high project velocity</a> necessitates a revision in its governance and organizational structure to align with the scale of its growing complexity and community contributions. To best serve its expansive ecosystem, Meshery maintainers have opted to partition its numerous GitHub repositories into two distinct organizations: <a href="https://github.com/meshery">Meshery</a> for the core platform and <a href="https://github.com/meshery-extensions">Meshery Extensions</a> for <a href="https://meshery.io/extensions">extensions</a>.</p>
 
 <p>This strategic move aims to enhance the project’s structure, manageability, scalability, and community engagement. This post outlines the rationale, suggested governance structure, support expectations, and project mechanics behind this decision, drawing parallels with similar strategies employed by other graduated projects.</p>
 
@@ -1117,7 +1326,7 @@ If you’re already contributing to Meshery or planning to start, the CMC is a m
       color: var(--color-primary-dark-light);
     }
   }
-</style>]]></content><author><name>Lee Calcote, Sangram Rath, Matthieu Evrin, Mia Grenell</name></author><category term="meshery" /><category term="open-source" /><category term="governance" /><category term="extensions" /><summary type="html"><![CDATA[Meshery’s high project velocity necessitates a revision in its governance and organizational structure to align with the scale of its growing complexity and community contributions. To best serve its expansive ecosystem, Meshery maintainers have opted to partition its numerous GitHub repositories into two distinct organizations: Meshery for the core platform and Meshery Extensions for extensions.]]></summary></entry><entry><title type="html">Meshery, the Rocket Ship</title><link href="https://meshery.io/blog/sixth-highest-velocity-cncf-project" rel="alternate" type="text/html" title="Meshery, the Rocket Ship" /><published>2025-11-04T06:00:00+00:00</published><updated>2025-11-04T06:00:00+00:00</updated><id>https://meshery.io/blog/meshery-6th-highest-velocity-cncf-project</id><content type="html" xml:base="https://meshery.io/blog/sixth-highest-velocity-cncf-project"><![CDATA[<p>Meshery, the extensible cloud native management platform, has achieved a remarkable milestone: recognition as the sixth highest-velocity project within the Cloud Native Computing Foundation (CNCF). This accomplishment is impressive for any project, but <em>especially noteworthy given Meshery’s Sandbox maturity level</em> and its position among 237 CNCF projects! Just six months ago, we celebrated reaching the ninth spot in our <a href="https://meshery.io/blog/ninth-highest-velocity-cncf-project/">April 2025 announcement</a>. Climbing three ranks in such a short time underscores the project’s accelerating momentum and the unwavering dedication of our global community.</p>
+</style>]]></content><author><name>Lee Calcote, Sangram Rath, Matthieu Evrin, Mia Grenell</name></author><category term="meshery" /><category term="open-source" /><category term="governance" /><category term="extensions" /><summary type="html"><![CDATA[Meshery’s high project velocity necessitates a revision in its governance and organizational structure to align with the scale of its growing complexity and community contributions. To best serve its expansive ecosystem, Meshery maintainers have opted to partition its numerous GitHub repositories into two distinct organizations: Meshery for the core platform and Meshery Extensions for extensions.]]></summary></entry><entry><title type="html">Meshery, the Rocket Ship</title><link href="https://meshery.io/blog/sixth-highest-velocity-cncf-project/" rel="alternate" type="text/html" title="Meshery, the Rocket Ship" /><published>2025-11-04T06:00:00+00:00</published><updated>2025-11-04T06:00:00+00:00</updated><id>https://meshery.io/blog/meshery-6th-highest-velocity-cncf-project</id><content type="html" xml:base="https://meshery.io/blog/sixth-highest-velocity-cncf-project/"><![CDATA[<p>Meshery, the extensible cloud native management platform, has achieved a remarkable milestone: recognition as the sixth highest-velocity project within the Cloud Native Computing Foundation (CNCF). This accomplishment is impressive for any project, but <em>especially noteworthy given Meshery’s Sandbox maturity level</em> and its position among 237 CNCF projects! Just six months ago, we celebrated reaching the ninth spot in our <a href="https://meshery.io/blog/ninth-highest-velocity-cncf-project/">April 2025 announcement</a>. Climbing three ranks in such a short time underscores the project’s accelerating momentum and the unwavering dedication of our global community.</p>
 
 <h2 id="from-humble-beginnings-to-high-velocity-powerhouse">From Humble Beginnings to High-Velocity Powerhouse</h2>
 
@@ -1324,874 +1533,4 @@ Workspace created: test-1
   <li>“workspace already exists”: Choose a unique name or delete the existing workspace if appropriate.</li>
 </ul>
 
-<p>NOTE: These commands are evolving. Share feedback, report issues, and help improve the experience so teams can collaborate more effectively in Meshery.</p>]]></content><author><name>Aadhitya Amarendiran</name></author><category term="mesheryctl" /><summary type="html"><![CDATA[Introducing new mesheryctl commands that enhance organization and workspace management capabilities. These commands empower users to efficiently manage their Meshery organizations and workspaces directly from the command line.]]></summary></entry><entry><title type="html">Mesheryctl End-To-End Testing Introduction</title><link href="https://meshery.io/blog/2025/10/2025-10-30-mesehryctl-e2e-test-introduction/" rel="alternate" type="text/html" title="Mesheryctl End-To-End Testing Introduction" /><published>2025-10-30T13:00:00+00:00</published><updated>2025-10-30T13:00:00+00:00</updated><id>https://meshery.io/blog/2025/10/mesehryctl-e2e-test-introduction</id><content type="html" xml:base="https://meshery.io/blog/2025/10/2025-10-30-mesehryctl-e2e-test-introduction/"><![CDATA[<p>You want to create a test for a new or existing Meshery command? Good. This tutorial explains how to do so. In this tutorial, we will introduce mesheryctl end-to-end testing using <strong>B</strong>ash <strong>A</strong>utomating <strong>T</strong>esting <strong>S</strong>ystem (<strong>BATS</strong>).</p>
-
-<h2 id="understand-meshery-ecosystem">Understand Meshery ecosystem</h2>
-
-<p>The best advice that we can share is first of all, <strong>be familiarized with Meshery ecosystem</strong>, this is the key to be able to implement tests.</p>
-
-<p>Be familiar with the different components and concepts in Meshery’s world, this can be done by reading the official documentation where you will find detailed explanations of the both <a href="https://docs.meshery.io/concepts/architecture">architectural</a> and <a href="https://docs.meshery.io/concepts/logical">logical</a> concepts.</p>
-
-<p><code class="language-plaintext highlighter-rouge">mesheryctl</code> is Meshery’s CLI</p>
-
-<p>Meshery CLI is written in Golang built on the Cobra framework and interacts with Meshery Server’s <a href="https://docs.meshery.io/reference/rest-apis">REST API</a>. By creating end-to-end tests during the development lifecycle, it ensures that changes or new features are behaving as expected.</p>
-
-<h2 id="how-to-create-a-test">How to create a test</h2>
-
-<p>Before starting, be sure you read the contributing guide that will provide you the requirements and the implementation standards <a href="https://docs.meshery.io/project/contributing/contributing-cli-tests">here</a>.</p>
-
-<h3 id="scenario">Scenario</h3>
-
-<p>We will use a fictitious command named <code class="language-plaintext highlighter-rouge">awesome</code> through this tutorial that has 3 subcommands <code class="language-plaintext highlighter-rouge">create</code>, <code class="language-plaintext highlighter-rouge">list</code> and <code class="language-plaintext highlighter-rouge">view</code> that need to be tested. Now, let’s define how they should behave to implement the test.</p>
-
-<p><strong>Subcommands behavior expected:</strong></p>
-
-<ul>
-  <li>
-    <p><strong>create:</strong></p>
-
-    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Create `test`</span>
-~<span class="nv">$ </span>mesheryctl awesome create <span class="nb">test
-test </span>has been created successfully
-
-<span class="c"># Create missing argument</span>
-~<span class="nv">$ </span>mesheryctl awesome create
-Error: no name was provided. 
-Please provide the name that you want to create
-</code></pre></div>    </div>
-  </li>
-  <li>
-    <p><strong>list:</strong></p>
-
-    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>~<span class="nv">$ </span>mesheryctl awesome list
-Total number of elements: 3
-Page: 1
-NAME     DESCRIPTION
-<span class="nb">test     </span>description of <span class="nb">test
-</span>test-1   description of <span class="nb">test </span>1
-test-2   description of <span class="nb">test </span>2
-</code></pre></div>    </div>
-  </li>
-  <li>
-    <p><strong>view:</strong></p>
-
-    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># View `test`</span>
-~<span class="nv">$ </span>mesheryctl awesome view <span class="nb">test
-</span>Name: <span class="nb">test</span>
-
-<span class="c"># View missing argument</span>
-~<span class="nv">$ </span>mesheryctl awesome view
-Error: no name was provided. 
-Please provide the name that you want to view
-
-<span class="c"># View no existing elements</span>
-~<span class="nv">$ </span>mesheryctl awesome view non-existing
-No element with name <span class="s2">"non-existing"</span> has been found. 
-Ensure to provided an existing name. <span class="sb">`</span>mesheryctl awesome list<span class="sb">`</span> to list existing element.
-</code></pre></div>    </div>
-  </li>
-</ul>
-
-<p>All is set now to create required tests.</p>
-
-<h3 id="folder-structure">Folder structure</h3>
-
-<p>All End-To-End tests are stored in <code class="language-plaintext highlighter-rouge">mesheryctl/tests/e2e</code></p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tests/
-└── e2e
-    ├── 000-prerequisites
-    ├── 001-system
-    ├── 002-model
-    ├── 003-design
-    ├── 004-perf
-    ├── 005-component
-    └── helpers
-
-8 directories
-</code></pre></div></div>
-
-<h3 id="implementation">Implementation</h3>
-
-<p>You need to create a new folder that will contain all the tests for this command.</p>
-
-<p>Following the implementation standard, the folder will be <code class="language-plaintext highlighter-rouge">tests/e2e/006-awesome</code>, then we will create a file for each subcommand, this is the expected result</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tests/
-└── e2e
-    ├── 000-prerequisites
-    ├── 001-system
-    ├── 002-model
-    ├── 003-design
-    ├── 004-perf
-    ├── 005-component    
-    ├── 006-awesome
-    │   ├── 00-awesome.bats
-    │   ├── 01-awesome-create.bats
-    │   ├── 02-awesome-list.bats
-    │   └── 03-awesome-view.bats
-    └── helpers
-</code></pre></div></div>
-
-<h4 id="create">Create</h4>
-
-<p>Content of 01-awesome-create.bats</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c">#!/usr/bin/env bats</span>
-
-  <span class="c"># Add helpers functions to not reinvent the wheel</span>
-  setup<span class="o">()</span> <span class="o">{</span>
-    load <span class="s2">"</span><span class="nv">$E2E_HELPERS_PATH</span><span class="s2">/bats_libraries"</span>
-    _load_bats_libraries
-  <span class="o">}</span>
-
-  @test <span class="s2">"create command without arguments fails"</span> <span class="o">{</span>
-    run <span class="nv">$MESHERYCTL_BIN</span> awesome create
-    
-    
-    assert_failure
-    assert_output <span class="nt">--partial</span> <span class="s2">"Error: no name was provided."</span>
-    assert_output <span class="nt">--partial</span> <span class="s2">"Please provide the name that you want to create"</span>
-  <span class="o">}</span>
-
-  @test <span class="s2">"create command with argument succeeds"</span> <span class="o">{</span>
-    run <span class="nv">$MESHERYCTL_BIN</span> awesome create <span class="nb">test
-    
-    </span>assert_success
-    
-    assert_output <span class="s2">"Name: test"</span>
-  <span class="o">}</span>
-</code></pre></div></div>
-
-<h4 id="list">List</h4>
-
-<p>Content of 02-awesome-list.bats</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env bats</span>
-
-<span class="c"># Add helpers functions to not reinvent the wheel</span>
-setup<span class="o">()</span> <span class="o">{</span>
-   load <span class="s2">"</span><span class="nv">$E2E_HELPERS_PATH</span><span class="s2">/bats_libraries"</span>
-	_load_bats_libraries
-<span class="o">}</span>
-
-@test <span class="s2">"list command succeeds"</span> <span class="o">{</span>
-  run <span class="nv">$MESHERYCTL_BIN</span> awesome list   
-  
-  assert_success
-  
-  assert_output <span class="nt">--partial</span> Total number of elements: 3
-  assert_output <span class="nt">--partial</span> Page: 1
-  assert_output <span class="nt">--partial</span> NAME     DESCRIPTION
-  assert_output <span class="nt">--partial</span> <span class="nb">test     </span>description of <span class="nb">test
-  </span>assert_output <span class="nt">--partial</span> test-1   description of <span class="nb">test </span>1
-  assert_output <span class="nt">--partial</span> test-2   description of <span class="nb">test </span>2
-<span class="o">}</span>
-</code></pre></div></div>
-
-<h4 id="view">View</h4>
-
-<p>Content of 03-awesome-view.bats</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env bats</span>
-
-<span class="c"># Add helpers functions to not reinvent the wheel</span>
-setup<span class="o">()</span> <span class="o">{</span>
-   load <span class="s2">"</span><span class="nv">$E2E_HELPERS_PATH</span><span class="s2">/bats_libraries"</span>
-	_load_bats_libraries
-<span class="o">}</span>
-
-@test <span class="s2">"view command without arguments fails"</span> <span class="o">{</span>
-  run <span class="nv">$MESHERYCTL_BIN</span> awesome view
-   
-  
-  assert_failure
-  assert_output <span class="nt">--partial</span> <span class="s2">"Error: no name was provided."</span>
-  assert_output <span class="nt">--partial</span> <span class="s2">"Please provide the name that you want to view"</span>
-<span class="o">}</span>
-
-@test <span class="s2">"view command with existing awesome name is displaying name"</span> <span class="o">{</span>
-  run <span class="nv">$MESHERYCTL_BIN</span> awesome view <span class="nb">test
-   
-  </span>assert_success
-  
-  assert_output <span class="s2">"Name: test"</span>
-<span class="o">}</span>
-
-@test <span class="s2">"view command with non-existing awesome name is displaying non existing message"</span> <span class="o">{</span>
-  run <span class="nv">$MESHERYCTL_BIN</span> awesome view non-existing
-   
-  assert_success
-  
-  assert_output  <span class="nt">--partial</span> <span class="s2">"No element with name "</span>non-existing<span class="s2">" has been found."</span>
-  assert_output  <span class="nt">--partial</span> <span class="s2">"Ensure to provide an existing name. </span><span class="sb">`</span>mesheryctl awesome list<span class="sb">`</span><span class="s2"> to list existing element."</span>
-<span class="o">}</span>
-</code></pre></div></div>
-
-<h3 id="run-added-end-to-end-tests">Run added End-To-End tests</h3>
-
-<p>Now you have created a new suite of tests, you can confirm it is working as expected by running the following command and see an example of output</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>~/mesheryctl/ <span class="nv">$ </span>make e2e-no-build <span class="nv">BATS_FOLDER_PATTERN</span><span class="o">=</span>006-awesome
-
-
-<span class="c">#### MESHERYCTL END-TO-END TESTING - START ####</span>
-
-00-awesome.bats
-01-awesome-create.bats
- ✓ create <span class="nb">command </span>without arguments fails
- ✓ create <span class="nb">command </span>with argument succeed
-02-awesome-list.bats
- ✓ list <span class="nb">command </span>succeed
-03-awesome-view.bats
- ✓ view <span class="nb">command </span>without arguments fails
- ✓ view <span class="nb">command </span>with existing awesome name is displaying name
- ✓ view <span class="nb">command </span>with non-existing awesome name is displaying non existing message
-
- 6 tests, 0 failures
-
-
-<span class="c">#### MESHERYCTL END-TO-END TESTING - DONE ####</span>
-</code></pre></div></div>
-
-<h2 id="conclusion">Conclusion</h2>
-
-<p>You now have a small, repeatable e2e test suite for your imaginary <code class="language-plaintext highlighter-rouge">awesome</code> command. Practice:</p>
-
-<ul>
-  <li>keep tests small and independent,</li>
-  <li>use the helpers to avoid duplication,</li>
-  <li>prefer deterministic assertions (exact when possible, partial when needed),</li>
-  <li>and run them locally before pushing so CI stays happy.</li>
-</ul>
-
-<p>If a test fails: write a better assertion, fix the bug, or add a regression test. Rinse and repeat.</p>
-
-<p>Happy testing — may your CI logs be short and your green checks plentiful.</p>]]></content><author><name>Matthieu EVRIN</name></author><category term="mesheryctl" /><category term="test" /><summary type="html"><![CDATA[You want to create a test for a new or existing Meshery command? Good. This tutorial explains how to do so. In this tutorial, we will introduce mesheryctl end-to-end testing using Bash Automating Testing System (BATS).]]></summary></entry><entry><title type="html">mesheryctl model init and build explained</title><link href="https://meshery.io/blog/2025/10/2025-10-29-mesheryctl-model-init/" rel="alternate" type="text/html" title="mesheryctl model init and build explained" /><published>2025-10-29T00:00:00+00:00</published><updated>2025-10-29T00:00:00+00:00</updated><id>https://meshery.io/blog/2025/10/mesheryctl-model-init</id><content type="html" xml:base="https://meshery.io/blog/2025/10/2025-10-29-mesheryctl-model-init/"><![CDATA[<p>If you are new to the Meshery ecosystem and want to create your own models, this post will show you how to do so using Meshery CLI (mesheryctl).</p>
-
-<blockquote>
-  <p><strong>What is a Meshery Model?</strong><br />
-Meshery models are reusable definitions of cloud-native infrastructure and workloads. They help you describe, package, and share your architecture.<br />
-<a href="https://docs.meshery.io/concepts/logical/models">Learn more about Meshery models</a>.</p>
-</blockquote>
-
-<h2 id="quick-start-a-new-model--a-twostep-story">Quick start a new model — a two‑step story</h2>
-
-<p>You have an idea and want to try it quickly with Meshery. In this short tutorial you will:</p>
-
-<ol>
-  <li>scaffold a new model with mesheryctl, then</li>
-  <li>build it into a runnable artifact.</li>
-</ol>
-
-<p>Treat this as a skeleton: commands, expected behavior, and places to expand. Fill in examples, flags, and troubleshooting later.</p>
-
-<h3 id="step-1--scaffold-mesheryctl-model-init">Step 1 — scaffold: <code class="language-plaintext highlighter-rouge">mesheryctl model init</code></h3>
-
-<p><strong>Purpose:</strong> Generates a folder structure and guides the user on model creation.</p>
-
-<p><strong>Documentation:</strong> <a href="https://docs.meshery.io/reference/mesheryctl/model/init">https://docs.meshery.io/reference/mesheryctl/model/init</a></p>
-
-<p>In our example we will create a new model in a dedicated path in a specific format using the following values:</p>
-
-<ul>
-  <li><strong>name:</strong> my-awesome-model</li>
-  <li><strong>path:</strong> my-awesome-models</li>
-  <li><strong>format:</strong> json</li>
-</ul>
-
-<h4 id="create">Create</h4>
-
-<p><strong>Example:</strong></p>
-
-<p>In my destination path, nothing is present.</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>~/my-awesome-models<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span>
-total 0
-</code></pre></div></div>
-
-<p>Now you can create your scaffold by running the following command</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>mesheryctl model init my-awesome-model <span class="nt">--path</span> ./my-awesome-models <span class="nt">--output-format</span> json
-
-Creating new Meshery model: my-awesome-model
-Creating directory structure...
-Generating model definition...
-Adding sample components...
-Creating sample relationships...
-Adding sample connections...
-Creating sample credentials...
-Created my-awesome-model model at my-awesome-models/my-awesome-model
-</code></pre></div></div>
-
-<p>This command creates a new model named <code class="language-plaintext highlighter-rouge">my-awesome-model</code> in the <code class="language-plaintext highlighter-rouge">my-awesome-models</code> directory with the following structure:</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>my-awesome-models/
-└── my-awesome-model
-    └── v0.1.0
-        ├── components
-        │   └── component.json
-        ├── connections
-        ├── credentials
-        ├── model.json
-        └── relationships
-            └── relationship.json
-
-6 directories, 3 files
-</code></pre></div></div>
-
-<p>You can see that the required folders/files have been created.</p>
-
-<p>Next steps:</p>
-
-<ol>
-  <li><code class="language-plaintext highlighter-rouge">cd /home/user/my-awesome-models/my-awesome-model</code></li>
-  <li>Edit <code class="language-plaintext highlighter-rouge">model.json</code> to customize your model configuration</li>
-  <li>Add your components in the <code class="language-plaintext highlighter-rouge">components/</code> directory</li>
-  <li>Define relationships in the <code class="language-plaintext highlighter-rouge">relationships/</code> directory</li>
-  <li>Add your connections in the <code class="language-plaintext highlighter-rouge">connections/</code> directory</li>
-  <li>Define credentials in the <code class="language-plaintext highlighter-rouge">credentials/</code> directory</li>
-  <li>Use <code class="language-plaintext highlighter-rouge">mesheryctl model build</code> to package your model</li>
-</ol>
-
-<p>To import this model into Meshery:</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>mesheryctl model import /home/user/my-awesome-models/my-awesome-model
-</code></pre></div></div>
-
-<p>To export this model as OCI image:</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mesheryctl model build my-awesome-model/v0.1.0 <span class="nt">--path</span> /home/user/my-awesome-models
-</code></pre></div></div>
-
-<p>Detailed guide: <a href="https://docs.meshery.io/guides/creating-new-model-with-mesheryctl">https://docs.meshery.io/guides/creating-new-model-with-mesheryctl</a></p>
-
-<p>What this does (high level):</p>
-
-<ul>
-  <li>creates a directory with the model name and a subdirectory with the version of the model</li>
-  <li>generates the files needed for a valid model</li>
-  <li>Details each step</li>
-  <li>gives you the next actions to take</li>
-</ul>
-
-<p>Let’s see what we have in the <code class="language-plaintext highlighter-rouge">my-awesome-models</code> folder</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">.</span>
-└── my-awesome-model
-    └── v0.1.0
-        ├── components
-        │   └── component.json
-        ├── connections
-        ├── credentials
-        ├── model.json
-        └── relationships
-            └── relationship.json
-
-6 directories, 3 files
-</code></pre></div></div>
-
-<p>You can see that the required folders/files have been created.</p>
-
-<h4 id="customize">Customize</h4>
-
-<p>Now customize the generated files to represent your model. If you need more than one component or relationship, copy the existing file(s) and adjust them accordingly.</p>
-
-<p>Below are the contents of the generated files; they are provided only to show what is required.</p>
-
-<details><summary><b>model.json</b></summary>
-
-<div class="highlight">
-  <pre class="highlight">
-  <code json="">
-{
-  "id": "00000000-0000-0000-0000-000000000000",
-  "schemaVersion": "models.meshery.io/v1beta1",
-  "version": "v0.0.1",
-  "name": "untitled-model",
-  "displayName": "Untitled Model",
-  "description": "A new Meshery model.",
-  "status": "enabled",
-  "registrant": {
-    "id": "00000000-0000-0000-0000-000000000000",
-    "name": "",
-    "credential_id": "00000000-0000-0000-0000-000000000000",
-    "type": "",
-    "sub_type": "",
-    "kind": "artifacthub",
-    "status": "",
-    "user_id": "00000000-0000-0000-0000-000000000000",
-    "created_at": "0001-01-01T00:00:00Z",
-    "updated_at": "0001-01-01T00:00:00Z",
-    "deleted_at": null,
-    "schemaVersion": "connections.meshery.io/v1beta1",
-    "environments": [
-      {
-        "id": "00000000-0000-0000-0000-000000000000",
-        "name": "",
-        "description": "",
-        "organization_id": "00000000-0000-0000-0000-000000000000",
-        "owner": "00000000-0000-0000-0000-000000000000",
-        "created_at": "0001-01-01T00:00:00Z",
-        "updated_at": "0001-01-01T00:00:00Z",
-        "deleted_at": null,
-        "schemaVersion": "environments.meshery.io/v1beta1"
-      }
-    ]
-  },
-  "metadata": {
-    "capabilities": [],
-    "primaryColor": "#00b39f",
-    "secondaryColor": "#00D3A9",
-    "svgWhite": "&lt;svg width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"&lt;http://www.w3.org/2000/svg\"&gt;&gt;&lt;path d=\"M16.405 8.732v6.57l5.694-3.297-5.694-3.273Zm0 7.942v6.602l5.747-3.285-5.747-3.317Z\" fill=\"#fff\"/&gt;&lt;path d=\"M15.586 15.256v-6.47l-5.622 3.225 5.622 3.245ZM4.307 23.252a13.809 13.809 0 0 0 4.362 4.39v-6.914l-4.362 2.524Zm11.279-.008v-6.52L9.95 19.985l5.636 3.258Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"m9.49 27.23 5.707-3.263-5.707-3.3v6.563Z\" fill=\"#fff\"/&gt;&lt;path d=\"M22.54 27.265v-6.553l-5.699 3.259 5.7 3.294Zm5.58-4.773a13.697 13.697 0 0 0 1.612-5.895l-5.934 3.397 4.323 2.498Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"m23.362 19.298 5.728-3.276-5.728-3.291v6.567Z\" fill=\"#fff\"/&gt;&lt;path d=\"M22.541 11.315V4.8l-5.673 3.253 5.673 3.262Zm0 7.955v-6.574l-5.685 3.292 5.685 3.281Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M9.49 12.684v6.622l5.728-3.316-5.728-3.306Z\" fill=\"#fff\"/&gt;&lt;path d=\"M15.586 2.25a13.69 13.69 0 0 0-6.037 1.595l6.037 3.463V2.25Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M9.49 4.756v6.583l5.732-3.288L9.49 4.756Z\" fill=\"#fff\"/&gt;&lt;path d=\"M8.669 4.356a13.83 13.83 0 0 0-4.362 4.39l4.362 2.518V4.356Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M22.504 3.88a13.695 13.695 0 0 0-6.099-1.63v5.123l6.1-3.493ZM2.25 16.483c.071 2.12.634 4.196 1.644 6.062l4.418-2.559-6.062-3.503Zm1.644-7.028a13.68 13.68 0 0 0-1.644 6.036l6.068-3.482-4.424-2.554Z\" fill=\"#fff\"/&gt;&lt;path d=\"M9.539 28.147a13.673 13.673 0 0 0 6.047 1.603v-5.062L9.54 28.147Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M27.697 8.768a13.83 13.83 0 0 0-4.335-4.383v6.889l4.335-2.506ZM23.362 27.62a13.851 13.851 0 0 0 4.351-4.417l-4.351-2.514v6.93Z\" fill=\"#fff\"/&gt;&lt;path d=\"M29.75 15.452a13.659 13.659 0 0 0-1.63-5.979l-4.381 2.53 6.011 3.45Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M16.405 29.75a13.673 13.673 0 0 0 6.036-1.595l-6.036-3.498v5.093Z\" fill=\"#fff\"/&gt;&lt;path d=\"M8.669 19.247v-6.494L3.03 15.986l5.639 3.261Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;/svg&gt;",
-    "svgColor": "&lt;svg xmlns=\"&lt;http://www.w3.org/2000/svg\&gt;" id=\"Layer_1\" data-name=\"Layer 1\" viewBox=\"0 0 134.95 135.02\"&gt;<defs><style>.cls-1{fill:#00d3a9}.cls-2{fill:#00b39f}</style></defs><title>meshery-logo-light</title>&lt;polygon points=\"69.49 31.82 69.49 64.07 97.44 47.89 69.49 31.82\" class=\"cls-1\"/&gt;&lt;polygon points=\"69.49 70.81 69.49 103.22 97.7 87.09 69.49 70.81\" class=\"cls-1\"/&gt;&lt;polygon points=\"65.47 63.85 65.47 32.09 37.87 47.92 65.47 63.85\" class=\"cls-2\"/&gt;&lt;path d=\"M10.1,103.1a67.79,67.79,0,0,0,21.41,21.55V90.71Z\" class=\"cls-2\"/&gt;&lt;polygon points=\"65.47 103.06 65.47 71.05 37.8 87.07 65.47 103.06\" class=\"cls-2\"/&gt;&lt;polygon points=\"35.54 122.63 63.56 106.61 35.54 90.41 35.54 122.63\" class=\"cls-1\"/&gt;&lt;polygon points=\"99.61 122.8 99.61 90.63 71.63 106.63 99.61 122.8\" class=\"cls-2\"/&gt;&lt;path d=\"M127,99.37a67.22,67.22,0,0,0,7.91-28.94L105.78,87.11Z\" class=\"cls-2\"/&gt;&lt;polygon points=\"103.64 83.69 131.76 67.61 103.64 51.45 103.64 83.69\" class=\"cls-1\"/&gt;&lt;polygon points=\"99.61 44.5 99.61 12.52 71.76 28.49 99.61 44.5\" class=\"cls-2\"/&gt;&lt;polygon points=\"99.61 83.55 99.61 51.28 71.7 67.44 99.61 83.55\" class=\"cls-2\"/&gt;&lt;polygon points=\"67.48 135.02 67.49 135.02 67.48 135.02 67.48 135.02\" class=\"cls-2\"/&gt;&lt;polygon points=\"35.54 51.22 35.54 83.73 63.66 67.45 35.54 51.22\" class=\"cls-1\"/&gt;&lt;path d=\"M65.47,0A67.2,67.2,0,0,0,35.83,7.83l29.64,17Z\" class=\"cls-2\"/&gt;&lt;polygon points=\"35.54 12.3 35.54 44.62 63.68 28.48 35.54 12.3\" class=\"cls-1\"/&gt;&lt;path d=\"M31.51,10.34A67.89,67.89,0,0,0,10.1,31.89L31.51,44.25Z\" class=\"cls-2\"/&gt;&lt;path d=\"M99.43,8A67.23,67.23,0,0,0,69.49,0V25.15Z\" class=\"cls-1\"/&gt;&lt;path d=\"M0,69.87A67.27,67.27,0,0,0,8.07,99.63L29.76,87.07Z\" class=\"cls-1\"/&gt;&lt;path d=\"M8.07,35.37A67.16,67.16,0,0,0,0,65L29.79,47.91Z\" class=\"cls-1\"/&gt;&lt;path d=\"M35.78,127.13A67.13,67.13,0,0,0,65.47,135V110.15Z\" class=\"cls-2\"/&gt;&lt;path d=\"M124.92,32a67.9,67.9,0,0,0-21.28-21.52V44.3Z\" class=\"cls-1\"/&gt;&lt;path d=\"M103.64,124.54A68,68,0,0,0,125,102.86L103.64,90.52Z\" class=\"cls-1\"/&gt;&lt;path d=\"M135,64.81a67.06,67.06,0,0,0-8-29.35L105.49,47.88Z\" class=\"cls-2\"/&gt;&lt;path d=\"M69.49,135a67.12,67.12,0,0,0,29.63-7.83L69.49,110Z\" class=\"cls-1\"/&gt;&lt;polygon points=\"31.51 83.44 31.51 51.56 3.83 67.43 31.51 83.44\" class=\"cls-2\"/&gt;&lt;/svg&gt;",
-    "svgComplete": "",
-    "shape": "circle",
-    "isAnnotation": false
-  },
-  "registrantId": "00000000-0000-0000-0000-000000000000",
-  "categoryId": "00000000-0000-0000-0000-000000000000",
-  "category": {
-    "id": "00000000-0000-0000-0000-000000000000",
-    "name": "Uncategorized"
-  },
-  "subCategory": "Uncategorized",
-  "model": {
-    "version": "v0.0.1"
-  },
-  "componentsCount": 0,
-  "relationshipsCount": 0
-}
-
-  </code>
-  </pre>
-</div>
-
-</details>
-
-<details><summary><b>component.json</b></summary>
-
-<div class="highlight">
-  <pre class="highlight">
-  <code json="">
-  {
-    "id": "00000000-0000-0000-0000-000000000000",
-    "schemaVersion": "components.meshery.io/v1beta1",
-    "version": "v0.0.1",
-    "displayName": "Untitled Component",
-    "description": "A new Meshery Component.",
-    "format": "JSON",
-    "model": {
-      "id": "00000000-0000-0000-0000-000000000000",
-      "schemaVersion": "models.meshery.io/v1beta1",
-      "version": "v0.0.1",
-      "name": "untitled-model",
-      "displayName": "Untitled Model",
-      "description": "A new Meshery model.",
-      "status": "enabled",
-      ...
-    },
-    ...
-  }
-{
-  "id": "00000000-0000-0000-0000-000000000000",
-  "schemaVersion": "components.meshery.io/v1beta1",
-  "version": "v0.0.1",
-  "displayName": "Untitled Component",
-  "description": "A new Meshery Component.",
-  "format": "JSON",
-  "model": {
-    "id": "00000000-0000-0000-0000-000000000000",
-    "schemaVersion": "models.meshery.io/v1beta1",
-    "version": "v0.0.1",
-    "name": "untitled-model",
-    "displayName": "Untitled Model",
-    "description": "A new Meshery model.",
-    "status": "enabled",
-    "registrant": {
-      "id": "00000000-0000-0000-0000-000000000000",
-      "name": "",
-      "credential_id": "00000000-0000-0000-0000-000000000000",
-      "type": "",
-      "sub_type": "",
-      "kind": "artifacthub",
-      "status": "",
-      "user_id": "00000000-0000-0000-0000-000000000000",
-      "created_at": "0001-01-01T00:00:00Z",
-      "updated_at": "0001-01-01T00:00:00Z",
-      "deleted_at": null,
-      "schemaVersion": "connections.meshery.io/v1beta1",
-      "environments": [
-        {
-          "id": "00000000-0000-0000-0000-000000000000",
-          "name": "",
-          "description": "",
-          "organization_id": "00000000-0000-0000-0000-000000000000",
-          "owner": "00000000-0000-0000-0000-000000000000",
-          "created_at": "0001-01-01T00:00:00Z",
-          "updated_at": "0001-01-01T00:00:00Z",
-          "deleted_at": null,
-          "schemaVersion": "environments.meshery.io/v1beta1"
-        }
-      ]
-    },
-    "metadata": {
-      "capabilities": [],
-      "primaryColor": "#00b39f",
-      "secondaryColor": "#00D3A9",
-      "svgWhite": "&lt;svg width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"&lt;http://www.w3.org/2000/svg\"&gt;&gt;&lt;path d=\"M16.405 8.732v6.57l5.694-3.297-5.694-3.273Zm0 7.942v6.602l5.747-3.285-5.747-3.317Z\" fill=\"#fff\"/&gt;&lt;path d=\"M15.586 15.256v-6.47l-5.622 3.225 5.622 3.245ZM4.307 23.252a13.809 13.809 0 0 0 4.362 4.39v-6.914l-4.362 2.524Zm11.279-.008v-6.52L9.95 19.985l5.636 3.258Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"m9.49 27.23 5.707-3.263-5.707-3.3v6.563Z\" fill=\"#fff\"/&gt;&lt;path d=\"M22.54 27.265v-6.553l-5.699 3.259 5.7 3.294Zm5.58-4.773a13.697 13.697 0 0 0 1.612-5.895l-5.934 3.397 4.323 2.498Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"m23.362 19.298 5.728-3.276-5.728-3.291v6.567Z\" fill=\"#fff\"/&gt;&lt;path d=\"M22.541 11.315V4.8l-5.673 3.253 5.673 3.262Zm0 7.955v-6.574l-5.685 3.292 5.685 3.281Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M9.49 12.684v6.622l5.728-3.316-5.728-3.306Z\" fill=\"#fff\"/&gt;&lt;path d=\"M15.586 2.25a13.69 13.69 0 0 0-6.037 1.595l6.037 3.463V2.25Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M9.49 4.756v6.583l5.732-3.288L9.49 4.756Z\" fill=\"#fff\"/&gt;&lt;path d=\"M8.669 4.356a13.83 13.83 0 0 0-4.362 4.39l4.362 2.518V4.356Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M22.504 3.88a13.695 13.695 0 0 0-6.099-1.63v5.123l6.1-3.493ZM2.25 16.483c.071 2.12.634 4.196 1.644 6.062l4.418-2.559-6.062-3.503Zm1.644-7.028a13.68 13.68 0 0 0-1.644 6.036l6.068-3.482-4.424-2.554Z\" fill=\"#fff\"/&gt;&lt;path d=\"M9.539 28.147a13.673 13.673 0 0 0 6.047 1.603v-5.062L9.54 28.147Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M27.697 8.768a13.83 13.83 0 0 0-4.335-4.383v6.889l4.335-2.506ZM23.362 27.62a13.851 13.851 0 0 0 4.351-4.417l-4.351-2.514v6.93Z\" fill=\"#fff\"/&gt;&lt;path d=\"M29.75 15.452a13.659 13.659 0 0 0-1.63-5.979l-4.381 2.53 6.011 3.45Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M16.405 29.75a13.673 13.673 0 0 0 6.036-1.595l-6.036-3.498v5.093Z\" fill=\"#fff\"/&gt;&lt;path d=\"M8.669 19.247v-6.494L3.03 15.986l5.639 3.261Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;/svg&gt;",
-      "svgColor": "&lt;svg xmlns=\"&lt;http://www.w3.org/2000/svg\&gt;" id=\"Layer_1\" data-name=\"Layer 1\" viewBox=\"0 0 134.95 135.02\"&gt;<defs><style>.cls-1{fill:#00d3a9}.cls-2{fill:#00b39f}</style></defs><title>meshery-logo-light</title>&lt;polygon points=\"69.49 31.82 69.49 64.07 97.44 47.89 69.49 31.82\" class=\"cls-1\"/&gt;&lt;polygon points=\"69.49 70.81 69.49 103.22 97.7 87.09 69.49 70.81\" class=\"cls-1\"/&gt;&lt;polygon points=\"65.47 63.85 65.47 32.09 37.87 47.92 65.47 63.85\" class=\"cls-2\"/&gt;&lt;path d=\"M10.1,103.1a67.79,67.79,0,0,0,21.41,21.55V90.71Z\" class=\"cls-2\"/&gt;&lt;polygon points=\"65.47 103.06 65.47 71.05 37.8 87.07 65.47 103.06\" class=\"cls-2\"/&gt;&lt;polygon points=\"35.54 122.63 63.56 106.61 35.54 90.41 35.54 122.63\" class=\"cls-1\"/&gt;&lt;polygon points=\"99.61 122.8 99.61 90.63 71.63 106.63 99.61 122.8\" class=\"cls-2\"/&gt;&lt;path d=\"M127,99.37a67.22,67.22,0,0,0,7.91-28.94L105.78,87.11Z\" class=\"cls-2\"/&gt;&lt;polygon points=\"103.64 83.69 131.76 67.61 103.64 51.45 103.64 83.69\" class=\"cls-1\"/&gt;&lt;polygon points=\"99.61 44.5 99.61 12.52 71.76 28.49 99.61 44.5\" class=\"cls-2\"/&gt;&lt;polygon points=\"99.61 83.55 99.61 51.28 71.7 67.44 99.61 83.55\" class=\"cls-2\"/&gt;&lt;polygon points=\"67.48 135.02 67.49 135.02 67.48 135.02 67.48 135.02\" class=\"cls-2\"/&gt;&lt;polygon points=\"35.54 51.22 35.54 83.73 63.66 67.45 35.54 51.22\" class=\"cls-1\"/&gt;&lt;path d=\"M65.47,0A67.2,67.2,0,0,0,35.83,7.83l29.64,17Z\" class=\"cls-2\"/&gt;&lt;polygon points=\"35.54 12.3 35.54 44.62 63.68 28.48 35.54 12.3\" class=\"cls-1\"/&gt;&lt;path d=\"M31.51,10.34A67.89,67.89,0,0,0,10.1,31.89L31.51,44.25Z\" class=\"cls-2\"/&gt;&lt;path d=\"M99.43,8A67.23,67.23,0,0,0,69.49,0V25.15Z\" class=\"cls-1\"/&gt;&lt;path d=\"M0,69.87A67.27,67.27,0,0,0,8.07,99.63L29.76,87.07Z\" class=\"cls-1\"/&gt;&lt;path d=\"M8.07,35.37A67.16,67.16,0,0,0,0,65L29.79,47.91Z\" class=\"cls-1\"/&gt;&lt;path d=\"M35.78,127.13A67.13,67.13,0,0,0,65.47,135V110.15Z\" class=\"cls-2\"/&gt;&lt;path d=\"M124.92,32a67.9,67.9,0,0,0-21.28-21.52V44.3Z\" class=\"cls-1\"/&gt;&lt;path d=\"M103.64,124.54A68,68,0,0,0,125,102.86L103.64,90.52Z\" class=\"cls-1\"/&gt;&lt;path d=\"M135,64.81a67.06,67.06,0,0,0-8-29.35L105.49,47.88Z\" class=\"cls-2\"/&gt;&lt;path d=\"M69.49,135a67.12,67.12,0,0,0,29.63-7.83L69.49,110Z\" class=\"cls-1\"/&gt;&lt;polygon points=\"31.51 83.44 31.51 51.56 3.83 67.43 31.51 83.44\" class=\"cls-2\"/&gt;&lt;/svg&gt;",
-      "svgComplete": "",
-      "shape": "circle",
-      "isAnnotation": false
-    },
-    "registrantId": "00000000-0000-0000-0000-000000000000",
-    "categoryId": "00000000-0000-0000-0000-000000000000",
-    "category": {
-      "id": "00000000-0000-0000-0000-000000000000",
-      "name": "Uncategorized"
-    },
-    "subCategory": "Uncategorized",
-    "model": {
-      "version": "v0.0.1"
-    },
-    "componentsCount": 0,
-    "relationshipsCount": 0
-  },
-  "registrant": {},
-  "metadata": {
-    "genealogy": "",
-    "configurationUISchema": "",
-    "isAnnotation": false
-  },
-  "category": {},
-  "modelId": "00000000-0000-0000-0000-000000000000",
-  "styles": {
-    "primaryColor": "",
-    "secondaryColor": "",
-    "svgWhite": "",
-    "svgColor": "",
-    "svgComplete": "",
-    "color": "",
-    "font-family": "",
-    "font-size": "",
-    "font-style": "",
-    "font-weight": "",
-    "text-transform": "",
-    "label": "",
-    "shape": "",
-    "position": {},
-    "body-text": "",
-    "body-text-wrap": "",
-    "body-text-max-width": "",
-    "body-text-background-color": "",
-    "body-text-color": "",
-    "body-text-font-weight": "",
-    "body-text-horizontal-align": "",
-    "body-text-decoration": "",
-    "body-text-vertical-align": "",
-    "background-image": "",
-    "background-color": "",
-    "background-position-x": "",
-    "background-position-y": "",
-    "background-offset-x": "",
-    "background-offset-y": "",
-    "background-fit": "",
-    "background-clip": "",
-    "background-width-relative-to": "",
-    "background-height-relative-to": "",
-    "border-style": "",
-    "border-color": "",
-    "text-halign": "",
-    "text-valign": "",
-    "ghost": "no",
-    "active-bg-color": "",
-    "active-bg-opacity": "",
-    "active-bg-size": "",
-    "selection-box-color": "",
-    "outside-texture-bg-color": "",
-    "shape-polygon-points": "",
-    "menu-background-color": "",
-    "menu-forground-color": ""
-  },
-  "animation": {},
-  "position": {},
-  "capabilities": [
-    {
-      "schemaVersion": "capability.meshery.io/v1alpha1",
-      "version": "0.7.0",
-      "displayName": "Performance Test",
-      "description": "Initiate a performance test. Meshery will execute the load generation, collect metrics, and present the results.",
-      "kind": "action",
-      "type": "operator",
-      "subType": "perf-test",
-      "key": "",
-      "entityState": [
-        "instance"
-      ],
-      "status": "enabled",
-      "metadata": null
-    },
-    {
-      "schemaVersion": "capability.meshery.io/v1alpha1",
-      "version": "0.7.0",
-      "displayName": "Workload Configuration",
-      "description": "Configure the workload specific setting of a component",
-      "kind": "mutate",
-      "type": "configuration",
-      "subType": "config",
-      "key": "",
-      "entityState": [
-        "declaration"
-      ],
-      "status": "enabled",
-      "metadata": null
-    },
-    {
-      "schemaVersion": "capability.meshery.io/v1alpha1",
-      "version": "0.7.0",
-      "displayName": "Labels and Annotations Configuration",
-      "description": "Configure Labels And Annotations for  the component ",
-      "kind": "mutate",
-      "type": "configuration",
-      "subType": "labels-and-annotations",
-      "key": "",
-      "entityState": [
-        "declaration"
-      ],
-      "status": "enabled",
-      "metadata": null
-    },
-    {
-      "schemaVersion": "capability.meshery.io/v1alpha1",
-      "version": "0.7.0",
-      "displayName": "Relationships",
-      "description": "View relationships for the component",
-      "kind": "view",
-      "type": "configuration",
-      "subType": "relationship",
-      "key": "",
-      "entityState": [
-        "declaration",
-        "instance"
-      ],
-      "status": "enabled",
-      "metadata": null
-    },
-    {
-      "schemaVersion": "capability.meshery.io/v1alpha1",
-      "version": "0.7.0",
-      "displayName": "Json Schema",
-      "description": "View Component Definition ",
-      "kind": "view",
-      "type": "configuration",
-      "subType": "definition",
-      "key": "",
-      "entityState": [
-        "declaration",
-        "instance"
-      ],
-      "status": "enabled",
-      "metadata": null
-    },
-    {
-      "schemaVersion": "capability.meshery.io/v1alpha1",
-      "version": "0.7.0",
-      "displayName": "Styling",
-      "description": "Configure the visual styles for the component",
-      "kind": "mutate",
-      "type": "style",
-      "subType": "",
-      "key": "",
-      "entityState": [
-        "declaration"
-      ],
-      "status": "enabled",
-      "metadata": null
-    },
-    {
-      "schemaVersion": "capability.meshery.io/v1alpha1",
-      "version": "0.7.0",
-      "displayName": "Change Shape",
-      "description": "Change the shape of the component",
-      "kind": "mutate",
-      "type": "style",
-      "subType": "shape",
-      "key": "",
-      "entityState": [
-        "declaration"
-      ],
-      "status": "enabled",
-      "metadata": null
-    },
-    {
-      "schemaVersion": "capability.meshery.io/v1alpha1",
-      "version": "0.7.0",
-      "displayName": "Compound Drag And Drop",
-      "description": "Drag and Drop a component into a parent component in graph view",
-      "kind": "interaction",
-      "type": "graph",
-      "subType": "compoundDnd",
-      "key": "",
-      "entityState": [
-        "declaration"
-      ],
-      "status": "enabled",
-      "metadata": null
-    }
-  ],
-  "status": "enabled",
-  "instanceDetails": {},
-  "configuration": {},
-  "component": {
-    "version": "",
-    "kind": "",
-    "schema": ""
-  }
-}
-
-  </code>
-  </pre>
-</div>
-  
-</details>
-
-<details><summary><b>relationship.json</b></summary>
-<div class="highlight">
-  <pre class="highlight">
-  <code json="">
-
-{
-  "id": "00000000-0000-0000-0000-000000000000",
-  "schemaVersion": "relationships.meshery.io/v1alpha3",
-  "version": "v0.0.1",
-  "model": {
-    "id": "00000000-0000-0000-0000-000000000000",
-    "schemaVersion": "models.meshery.io/v1beta1",
-    "version": "v0.0.1",
-    "name": "untitled-model",
-    "displayName": "Untitled Model",
-    "description": "A new Meshery model.",
-    "status": "enabled",
-    "registrant": {
-      "id": "00000000-0000-0000-0000-000000000000",
-      "name": "",
-      "credential_id": "00000000-0000-0000-0000-000000000000",
-      "type": "",
-      "sub_type": "",
-      "kind": "artifacthub",
-      "status": "",
-      "user_id": "00000000-0000-0000-0000-000000000000",
-      "created_at": "0001-01-01T00:00:00Z",
-      "updated_at": "0001-01-01T00:00:00Z",
-      "deleted_at": null,
-      "schemaVersion": "connections.meshery.io/v1beta1",
-      "environments": [
-        {
-          "id": "00000000-0000-0000-0000-000000000000",
-          "name": "",
-          "description": "",
-          "organization_id": "00000000-0000-0000-0000-000000000000",
-          "owner": "00000000-0000-0000-0000-000000000000",
-          "created_at": "0001-01-01T00:00:00Z",
-          "updated_at": "0001-01-01T00:00:00Z",
-          "deleted_at": null,
-          "schemaVersion": "environments.meshery.io/v1beta1"
-        }
-      ]
-    },
-    "metadata": {
-      "capabilities": [],
-      "primaryColor": "#00b39f",
-      "secondaryColor": "#00D3A9",
-      "svgWhite": "&lt;svg width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"&lt;http://www.w3.org/2000/svg\"&gt;&gt;&lt;path d=\"M16.405 8.732v6.57l5.694-3.297-5.694-3.273Zm0 7.942v6.602l5.747-3.285-5.747-3.317Z\" fill=\"#fff\"/&gt;&lt;path d=\"M15.586 15.256v-6.47l-5.622 3.225 5.622 3.245ZM4.307 23.252a13.809 13.809 0 0 0 4.362 4.39v-6.914l-4.362 2.524Zm11.279-.008v-6.52L9.95 19.985l5.636 3.258Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"m9.49 27.23 5.707-3.263-5.707-3.3v6.563Z\" fill=\"#fff\"/&gt;&lt;path d=\"M22.54 27.265v-6.553l-5.699 3.259 5.7 3.294Zm5.58-4.773a13.697 13.697 0 0 0 1.612-5.895l-5.934 3.397 4.323 2.498Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"m23.362 19.298 5.728-3.276-5.728-3.291v6.567Z\" fill=\"#fff\"/&gt;&lt;path d=\"M22.541 11.315V4.8l-5.673 3.253 5.673 3.262Zm0 7.955v-6.574l-5.685 3.292 5.685 3.281Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M9.49 12.684v6.622l5.728-3.316-5.728-3.306Z\" fill=\"#fff\"/&gt;&lt;path d=\"M15.586 2.25a13.69 13.69 0 0 0-6.037 1.595l6.037 3.463V2.25Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M9.49 4.756v6.583l5.732-3.288L9.49 4.756Z\" fill=\"#fff\"/&gt;&lt;path d=\"M8.669 4.356a13.83 13.83 0 0 0-4.362 4.39l4.362 2.518V4.356Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M22.504 3.88a13.695 13.695 0 0 0-6.099-1.63v5.123l6.1-3.493ZM2.25 16.483c.071 2.12.634 4.196 1.644 6.062l4.418-2.559-6.062-3.503Zm1.644-7.028a13.68 13.68 0 0 0-1.644 6.036l6.068-3.482-4.424-2.554Z\" fill=\"#fff\"/&gt;&lt;path d=\"M9.539 28.147a13.673 13.673 0 0 0 6.047 1.603v-5.062L9.54 28.147Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M27.697 8.768a13.83 13.83 0 0 0-4.335-4.383v6.889l4.335-2.506ZM23.362 27.62a13.851 13.851 0 0 0 4.351-4.417l-4.351-2.514v6.93Z\" fill=\"#fff\"/&gt;&lt;path d=\"M29.75 15.452a13.659 13.659 0 0 0-1.63-5.979l-4.381 2.53 6.011 3.45Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;path d=\"M16.405 29.75a13.673 13.673 0 0 0 6.036-1.595l-6.036-3.498v5.093Z\" fill=\"#fff\"/&gt;&lt;path d=\"M8.669 19.247v-6.494L3.03 15.986l5.639 3.261Z\" fill=\"#fff\" fill-opacity=\".8\"/&gt;&lt;/svg&gt;",
-      "svgColor": "&lt;svg xmlns=\"&lt;http://www.w3.org/2000/svg\&gt;" id=\"Layer_1\" data-name=\"Layer 1\" viewBox=\"0 0 134.95 135.02\"&gt;<defs><style>.cls-1{fill:#00d3a9}.cls-2{fill:#00b39f}</style></defs><title>meshery-logo-light</title>&lt;polygon points=\"69.49 31.82 69.49 64.07 97.44 47.89 69.49 31.82\" class=\"cls-1\"/&gt;&lt;polygon points=\"69.49 70.81 69.49 103.22 97.7 87.09 69.49 70.81\" class=\"cls-1\"/&gt;&lt;polygon points=\"65.47 63.85 65.47 32.09 37.87 47.92 65.47 63.85\" class=\"cls-2\"/&gt;&lt;path d=\"M10.1,103.1a67.79,67.79,0,0,0,21.41,21.55V90.71Z\" class=\"cls-2\"/&gt;&lt;polygon points=\"65.47 103.06 65.47 71.05 37.8 87.07 65.47 103.06\" class=\"cls-2\"/&gt;&lt;polygon points=\"35.54 122.63 63.56 106.61 35.54 90.41 35.54 122.63\" class=\"cls-1\"/&gt;&lt;polygon points=\"99.61 122.8 99.61 90.63 71.63 106.63 99.61 122.8\" class=\"cls-2\"/&gt;&lt;path d=\"M127,99.37a67.22,67.22,0,0,0,7.91-28.94L105.78,87.11Z\" class=\"cls-2\"/&gt;&lt;polygon points=\"103.64 83.69 131.76 67.61 103.64 51.45 103.64 83.69\" class=\"cls-1\"/&gt;&lt;polygon points=\"99.61 44.5 99.61 12.52 71.76 28.49 99.61 44.5\" class=\"cls-2\"/&gt;&lt;polygon points=\"99.61 83.55 99.61 51.28 71.7 67.44 99.61 83.55\" class=\"cls-2\"/&gt;&lt;polygon points=\"67.48 135.02 67.49 135.02 67.48 135.02 67.48 135.02\" class=\"cls-2\"/&gt;&lt;polygon points=\"35.54 51.22 35.54 83.73 63.66 67.45 35.54 51.22\" class=\"cls-1\"/&gt;&lt;path d=\"M65.47,0A67.2,67.2,0,0,0,35.83,7.83l29.64,17Z\" class=\"cls-2\"/&gt;&lt;polygon points=\"35.54 12.3 35.54 44.62 63.68 28.48 35.54 12.3\" class=\"cls-1\"/&gt;&lt;path d=\"M31.51,10.34A67.89,67.89,0,0,0,10.1,31.89L31.51,44.25Z\" class=\"cls-2\"/&gt;&lt;path d=\"M99.43,8A67.23,67.23,0,0,0,69.49,0V25.15Z\" class=\"cls-1\"/&gt;&lt;path d=\"M0,69.87A67.27,67.27,0,0,0,8.07,99.63L29.76,87.07Z\" class=\"cls-1\"/&gt;&lt;path d=\"M8.07,35.37A67.16,67.16,0,0,0,0,65L29.79,47.91Z\" class=\"cls-1\"/&gt;&lt;path d=\"M35.78,127.13A67.13,67.13,0,0,0,65.47,135V110.15Z\" class=\"cls-2\"/&gt;&lt;path d=\"M124.92,32a67.9,67.9,0,0,0-21.28-21.52V44.3Z\" class=\"cls-1\"/&gt;&lt;path d=\"M103.64,124.54A68,68,0,0,0,125,102.86L103.64,90.52Z\" class=\"cls-1\"/&gt;&lt;path d=\"M135,64.81a67.06,67.06,0,0,0-8-29.35L105.49,47.88Z\" class=\"cls-2\"/&gt;&lt;path d=\"M69.49,135a67.12,67.12,0,0,0,29.63-7.83L69.49,110Z\" class=\"cls-1\"/&gt;&lt;polygon points=\"31.51 83.44 31.51 51.56 3.83 67.43 31.51 83.44\" class=\"cls-2\"/&gt;&lt;/svg&gt;",
-      "svgComplete": "",
-      "shape": "circle",
-      "isAnnotation": false
-    },
-    "registrantId": "00000000-0000-0000-0000-000000000000",
-    "categoryId": "00000000-0000-0000-0000-000000000000",
-    "category": {
-      "id": "00000000-0000-0000-0000-000000000000",
-      "name": "Uncategorized"
-    },
-    "subCategory": "Uncategorized",
-    "model": {
-      "version": "v0.0.1"
-    },
-    "componentsCount": 0,
-    "relationshipsCount": 0
-  },
-  "metadata": {},
-  "kind": "hierarchical",
-  "subType": "inventory",
-  "type": "parent",
-  "status": "enabled",
-  "evaluationQuery": "",
-  "capabilities": [],
-  "selectors": []
-}
-  </code>
-  </pre>
-</div>
-</details>
-
-<h3 id="step-2--build-mesheryctl-model-build">Step 2 — build: <code class="language-plaintext highlighter-rouge">mesheryctl model build</code></h3>
-
-<p><strong>Purpose:</strong> Create an OCI-compliant package from the model files.</p>
-
-<p><strong>Documentation:</strong> <a href="https://docs.meshery.io/reference/mesheryctl/model/build">https://docs.meshery.io/reference/mesheryctl/model/build</a></p>
-
-<p><strong>Example:</strong></p>
-
-<p>Now you have already customized your model and want to create an artifact.</p>
-
-<ul>
-  <li><strong>name:</strong> my-awesome-model</li>
-  <li><strong>path:</strong> my-awesome-models</li>
-  <li><strong>version:</strong> v0.1.0</li>
-</ul>
-
-<p>Be sure to move into the folder where the model was created (here: <code class="language-plaintext highlighter-rouge">my-awesome-models</code>)</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># move in the root folder where you store your models</span>
-
-~/<span class="nv">$ </span><span class="nb">cd</span> ~/my-awesome-models
-
-~/my-awesome-models<span class="nv">$ </span>mesheryctl model build my-awesome-model/v0.1.0
-Building meshery model from path my-awesome-model/v0.1.0
-Saving OCI artifact as my-awesome-model-v0-1-0.tar
-</code></pre></div></div>
-
-<p>What this does (high level):</p>
-
-<ul>
-  <li>build the model from the path provided</li>
-  <li>save it as an OCI artifact</li>
-</ul>
-
-<p>Let’s see what we have in <code class="language-plaintext highlighter-rouge">my-awesome-models</code> folder</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">.</span>
-├── my-awesome-model
-│   └── v0.1.0
-│       ├── components
-│       │   └── component.json
-│       ├── connections
-│       ├── credentials
-│       ├── model.json
-│       └── relationships
-│           └── relationship.json
-└── my-awesome-model-v0-1-0.tar
-
-6 directories, 4 files
-</code></pre></div></div>
-
-<p>You can see that an artifact has been generated properly</p>
-
-<h3 id="what-to-expect-next">What to expect next</h3>
-
-<p>If you would like to use that model, we will have another dedicated tutorial post to achieve this.</p>
-
-<p>I hope this quick introduction gives you a starting point to create your own model and enjoy the tools provided in the Meshery ecosystem.</p>]]></content><author><name>Matthieu Evrin</name></author><category term="releases" /><category term="mesheryctl" /><summary type="html"><![CDATA[If you are new to the Meshery ecosystem and want to create your own models, this post will show you how to do so using Meshery CLI (mesheryctl).]]></summary></entry></feed>
+<p>NOTE: These commands are evolving. Share feedback, report issues, and help improve the experience so teams can collaborate more effectively in Meshery.</p>]]></content><author><name>Aadhitya Amarendiran</name></author><category term="mesheryctl" /><summary type="html"><![CDATA[Introducing new mesheryctl commands that enhance organization and workspace management capabilities. These commands empower users to efficiently manage their Meshery organizations and workspaces directly from the command line.]]></summary></entry></feed>
